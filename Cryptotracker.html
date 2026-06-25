@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crypto Portfolio Tracker</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#f4f6f9;
+    padding:20px;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+}
+
+h1{
+    text-align:center;
+    margin-bottom:20px;
+    color:#333;
+}
+
+.dashboard{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:15px;
+    margin-bottom:20px;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    text-align:center;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+.card h2{
+    color:#2563eb;
+    margin-bottom:10px;
+}
+
+.form{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    margin-bottom:20px;
+}
+
+.form input{
+    width:100%;
+    padding:12px;
+    margin:8px 0;
+    border:1px solid #ccc;
+    border-radius:8px;
+}
+
+button{
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    color:white;
+    cursor:pointer;
+}
+
+.add-btn{
+    background:#2563eb;
+    width:100%;
+}
+
+.delete-btn{
+    background:#dc2626;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+    border-radius:12px;
+    overflow:hidden;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+th,td{
+    padding:12px;
+    text-align:center;
+    border-bottom:1px solid #ddd;
+}
+
+th{
+    background:#2563eb;
+    color:white;
+}
+
+.profit{
+    color:green;
+    font-weight:bold;
+}
+
+.loss{
+    color:red;
+    font-weight:bold;
+}
+
+@media(max-width:768px){
+
+    body{
+        padding:10px;
+    }
+
+    table{
+        display:block;
+        overflow-x:auto;
+    }
+
+    .dashboard{
+        grid-template-columns:1fr;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>🚀 Crypto Portfolio Tracker</h1>
+
+    <div class="dashboard">
+
+        <div class="card">
+            <h2 id="investment">₹0</h2>
+            <p>Total Investment</p>
+        </div>
+
+        <div class="card">
+            <h2 id="portfolioValue">₹0</h2>
+            <p>Portfolio Value</p>
+        </div>
+
+        <div class="card">
+            <h2 id="profitLoss">₹0</h2>
+            <p>Total Profit / Loss</p>
+        </div>
+
+    </div>
+
+    <div class="form">
+
+        <input type="text"
+        id="coin"
+        placeholder="Coin Name (BTC, ETH, SOL)">
+
+        <input type="number"
+        id="quantity"
+        placeholder="Quantity">
+
+        <input type="number"
+        id="buyPrice"
+        placeholder="Buy Price">
+
+        <input type="number"
+        id="currentPrice"
+        placeholder="Current Price">
+
+        <button
+        class="add-btn"
+        onclick="addAsset()">
+        Add Asset
+        </button>
+
+    </div>
+
+    <table>
+
+        <thead>
+            <tr>
+                <th>Coin</th>
+                <th>Quantity</th>
+                <th>Buy Price</th>
+                <th>Current Price</th>
+                <th>P/L</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+
+        <tbody id="portfolioTable"></tbody>
+
+    </table>
+
+</div>
+
+<script>
+
+let portfolio =
+JSON.parse(localStorage.getItem("portfolio")) || [];
+
+function saveData(){
+    localStorage.setItem(
+        "portfolio",
+        JSON.stringify(portfolio)
+    );
+}
+
+function addAsset(){
+
+    const coin =
+    document.getElementById("coin").value;
+
+    const quantity =
+    parseFloat(
+    document.getElementById("quantity").value);
+
+    const buyPrice =
+    parseFloat(
+    document.getElementById("buyPrice").value);
+
+    const currentPrice =
+    parseFloat(
+    document.getElementById("currentPrice").value);
+
+    if(
+        !coin ||
+        !quantity ||
+        !buyPrice ||
+        !currentPrice
+    ){
+        alert("Please fill all fields");
+        return;
+    }
+
+    portfolio.push({
+        id:Date.now(),
+        coin,
+        quantity,
+        buyPrice,
+        currentPrice
+    });
+
+    saveData();
+    displayPortfolio();
+
+    document.getElementById("coin").value="";
+    document.getElementById("quantity").value="";
+    document.getElementById("buyPrice").value="";
+    document.getElementById("currentPrice").value="";
+}
+
+function deleteAsset(id){
+
+    portfolio =
+    portfolio.filter(asset =>
+    asset.id !== id);
+
+    saveData();
+    displayPortfolio();
+}
+
+function updateDashboard(){
+
+    let investment = 0;
+    let value = 0;
+
+    portfolio.forEach(asset=>{
+
+        investment +=
+        asset.quantity * asset.buyPrice;
+
+        value +=
+        asset.quantity * asset.currentPrice;
+    });
+
+    let profitLoss =
+    value - investment;
+
+    document.getElementById(
+    "investment").innerText =
+    "₹" + investment.toFixed(2);
+
+    document.getElementById(
+    "portfolioValue").innerText =
+    "₹" + value.toFixed(2);
+
+    document.getElementById(
+    "profitLoss").innerText =
+    "₹" + profitLoss.toFixed(2);
+}
+
+function displayPortfolio(){
+
+    const table =
+    document.getElementById(
+    "portfolioTable");
+
+    table.innerHTML = "";
+
+    portfolio.forEach(asset=>{
+
+        let profit =
+        (asset.currentPrice -
+        asset.buyPrice) *
+        asset.quantity;
+
+        table.innerHTML += `
+        <tr>
+
+            <td>${asset.coin}</td>
+
+            <td>${asset.quantity}</td>
+
+            <td>₹${asset.buyPrice}</td>
+
+            <td>₹${asset.currentPrice}</td>
+
+            <td class="${
+                profit >= 0
+                ? 'profit'
+                : 'loss'
+            }">
+                ₹${profit.toFixed(2)}
+            </td>
+
+            <td>
+                <button
+                class="delete-btn"
+                onclick="deleteAsset(${asset.id})">
+                Delete
+                </button>
+            </td>
+
+        </tr>
+        `;
+    });
+
+    updateDashboard();
+}
+
+displayPortfolio();
+
+</script>
+
+</body>
+</html>
